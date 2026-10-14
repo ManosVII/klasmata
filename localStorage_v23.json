@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1718900000000,
+    "name": "Ελένη",
+    "avatar": "👧",
+    "xp": 2350,
+    "level": 7,
+    "totalCorrect": 168,
+    "totalGames": 4,
+    "bestStreak": 23,
+    "currentStreak": 2,
+    "vsWins": 3,
+    "equivalentCorrect": 41,
+    "problemsCorrect": 127,
+    "achievements": ["first_correct", "ten_correct", "fifty_correct", "hundred_correct", "streak_5", "streak_10", "streak_20", "level_5", "vs_win", "problem_solver"]
+  },
+  {
+    "id": 1718900500000,
+    "name": "Νίκος <b>&</b>",
+    "avatar": "🦁",
+    "xp": 505000,
+    "level": 101,
+    "totalCorrect": 9000,
+    "totalGames": 120,
+    "bestStreak": 60,
+    "currentStreak": 0,
+    "vsWins": 55,
+    "equivalentCorrect": 900,
+    "problemsCorrect": 8100,
+    "achievements": ["first_correct", "level_100", "vs_legend"]
+  }
+]

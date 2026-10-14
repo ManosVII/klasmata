@@ -1,0 +1,38 @@
+{
+  "profiles": [
+    {
+      "id": 1718900000000,
+      "name": "Ελένη",
+      "avatar": "👧",
+      "xp": 2600,
+      "level": 7,
+      "totalCorrect": 180,
+      "totalGames": 5,
+      "bestStreak": 23,
+      "currentStreak": 0,
+      "vsWins": 3,
+      "equivalentCorrect": 45,
+      "problemsCorrect": 135,
+      "achievements": ["first_correct", "ten_correct", "fifty_correct", "hundred_correct", "streak_5", "streak_10", "streak_20", "level_5", "vs_win", "problem_solver", "vs_5"]
+    },
+    {
+      "id": 1700000000000,
+      "name": "Παλιός Μαθητής",
+      "avatar": "🐼",
+      "xp": "450",
+      "level": "3",
+      "totalCorrect": 40,
+      "bestStreak": 6
+    },
+    {
+      "id": "1);alert(document.cookie)//",
+      "name": "<svg/onload=alert()>",
+      "avatar": "<img src=x onerror=alert(1)>",
+      "xp": 100,
+      "level": 2,
+      "achievements": "not-an-array"
+    }
+  ],
+  "currentPlayerId": 1718900000000,
+  "exportDate": "2025-05-20T09:30:00.000Z"
+}

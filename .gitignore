@@ -1,0 +1,7 @@
+# Profile exports contain students' names - never commit them
+math_fractions_profiles*.json
+*_profiles*.json
+# OS files
+Thumbs.db
+desktop.ini
+.DS_Store

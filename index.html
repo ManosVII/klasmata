@@ -1000,9 +1000,11 @@ html.reduce-motion *, html.reduce-motion *::before, html.reduce-motion *::after 
             hard:   { maxBaseDen: 15, multipliers: [2, 3, 4, 5, 6, 7, 8], irreducible: true }
         },
         decimals: {
-            easy:   { toFraction: 'tenths', toDecimalDens: [2, 4, 5, 10] },
-            medium: { toFraction: 'hundredths', toDecimalDens: [2, 4, 5, 10, 20, 25, 50, 100] },
-            hard:   { toFraction: 'thousandthsOrWhole', maxWhole: 9, toDecimalDens: [8, 20, 25, 40, 50, 125, 200], improper: true }
+            // toDecimal uses decimal fractions only (denominators 10, 100, 1000, 10000);
+            // maxWhole = largest whole part (0 = proper fractions only)
+            easy:   { toFraction: 'tenths', toDecimalDens: [10], maxWhole: 0 },
+            medium: { toFraction: 'hundredths', toDecimalDens: [10, 100], maxWhole: 2 },
+            hard:   { toFraction: 'thousandthsOrWhole', maxWhole: 9, toDecimalDens: [100, 1000, 10000] }
         },
         problems: {     // word problems; operand ranges reuse CONFIG.operations
             easy:   { mulMaxDen: 4, timesMax: 6, ofIntMaxDen: 5, quotUnitDens: [2, 3, 4, 5], quotCount: [2, 8], shareMaxDen: 6, shareK: [2, 4], threeAddends: 0 },
@@ -1352,29 +1354,32 @@ html.reduce-motion *, html.reduce-motion *::before, html.reduce-motion *::after 
                 }
             };
         }
+        // Only decimal fractions (denominator 10, 100, 1000, 10000), shown unreduced.
         const f = attempt(function () {
             const d = pick(rng, cfg.toDecimalDens);
-            const n = cfg.improper ? ri(rng, 1, 2 * d - 1) : ri(rng, 1, d - 1);
-            if (n % d === 0) return null;
-            if (gcd(n, d) !== 1 && rng() < 0.7) return null;
-            return raw(n, d);
+            const proper = cfg.maxWhole === 0 || rng() < 0.6;
+            const n = proper ? ri(rng, 1, d - 1) : ri(rng, d + 1, (cfg.maxWhole + 1) * d - 1);
+            return n % d === 0 ? null : raw(n, d);
         });
         const value = simplify(f);
         const decStr = fractionToDecimal(value);
-        let k = 1; while (Math.pow(10, k) % f.d !== 0) k++;
-        const p10 = Math.pow(10, k), m = p10 / f.d;
-        const wrongDigits = decimalToFraction('0,' + f.n + f.d);
+        const zeros = String(f.d).length - 1;
+        const digitsWord = zeros === 1 ? '1 δεκαδικό ψηφίο' : zeros + ' δεκαδικά ψηφία';
+        const placeHint = 'Ο παρονομαστής ' + f.d + ' έχει ' + zeros + (zeros === 1 ? ' μηδενικό' : ' μηδενικά') + ', άρα ο δεκαδικός έχει ' + digitsWord + ' μετά την υποδιαστολή.';
+        const steps = [L(f, '=', S.num(decStr)), L(placeHint)];
+        if (Math.abs(f.n) % 10 === 0) steps.push(L('Τα μηδενικά στο τέλος, μετά την υποδιαστολή, μπορούμε να τα σβήσουμε.'));
         return {
             id: 'decimals:toDecimal:' + fracText(f),
             type: 'decimals', difficulty: diff,
-            prompt: L('Μετάτρεψε το κλάσμα', f, 'σε δεκαδικό αριθμό.'),
+            prompt: L('Μετάτρεψε το δεκαδικό κλάσμα', f, 'σε δεκαδικό αριθμό.'),
             input: { kind: 'typed', layout: 'decimal' },
             answer: valueAnswer(value, { forms: ['decimal'] }),
-            hint: 'Κάνε τον παρονομαστή 10, 100 ή 1000: πολλαπλασίασε και τους δύο όρους με τον ίδιο αριθμό.',
-            misconceptions: wrongDigits ? [{ value: wrongDigits, hint: 'Το ' + fracText(f) + ' δεν γράφεται βάζοντας τα ψηφία δίπλα-δίπλα! Κάνε τον παρονομαστή ' + p10 + '.' }].filter(x => !equals(x.value, value)) : [],
+            hint: 'Μέτρα τα μηδενικά του παρονομαστή: τόσα δεκαδικά ψηφία θα έχει ο αριθμός (10 → δέκατα, 100 → εκατοστά, 1000 → χιλιοστά, 10000 → δεκάκις χιλιοστά).',
+            misconceptions: [simplify(f.n, f.d * 10)].concat(f.d >= 100 ? [simplify(f.n, f.d / 10)] : [])
+                .filter(x => !equals(x, value)).map(x => ({ value: x, hint: placeHint })),
             explain: {
-                visuals: [],
-                steps: [L(f, '=', raw(f.n * m, p10), '=', S.num(decStr)), L('(πολλαπλασιάσαμε και τους δύο όρους × ' + m + ')')]
+                visuals: f.n < f.d && f.d === 10 ? [{ kind: 'bar', f: f, color: 2 }] : (f.n < f.d && f.d === 100 ? [{ kind: 'grid', f: f, color: 2 }] : []),
+                steps: steps
             }
         };
     };

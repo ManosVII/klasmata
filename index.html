@@ -1002,7 +1002,8 @@ html.reduce-motion *, html.reduce-motion *::before, html.reduce-motion *::after 
         decimals: {
             // toDecimal uses decimal fractions only (denominators 10, 100, 1000, 10000);
             // maxWhole = largest whole part (0 = proper fractions only)
-            easy:   { toFraction: 'tenths', toDecimalDens: [10], maxWhole: 0 },
+            // easyHundredths: on Easy, /100 only with tens (30/100 = 0,3)
+            easy:   { toFraction: 'tenths', toDecimalDens: [10, 100], maxWhole: 0, easyHundredths: true },
             medium: { toFraction: 'hundredths', toDecimalDens: [10, 100], maxWhole: 2 },
             hard:   { toFraction: 'thousandthsOrWhole', maxWhole: 9, toDecimalDens: [100, 1000, 10000] }
         },
@@ -1359,6 +1360,7 @@ html.reduce-motion *, html.reduce-motion *::before, html.reduce-motion *::after 
             const d = pick(rng, cfg.toDecimalDens);
             const proper = cfg.maxWhole === 0 || rng() < 0.6;
             const n = proper ? ri(rng, 1, d - 1) : ri(rng, d + 1, (cfg.maxWhole + 1) * d - 1);
+            if (cfg.easyHundredths && d === 100 && n % 10 !== 0) return null;
             return n % d === 0 ? null : raw(n, d);
         });
         const value = simplify(f);

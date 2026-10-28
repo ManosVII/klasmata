@@ -7,7 +7,7 @@
 <title>Μαθηματικά με Κλάσματα - Παιχνίδι</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Commissioner:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 /* ==================== DESIGN TOKENS ==================== */
 :root {
@@ -61,7 +61,7 @@
     --sh-3: 0 24px 60px rgba(0, 0, 0, 0.32);
     /* type */
     --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', 'Helvetica Neue', Arial, sans-serif;
-    --font-head: 'Poppins', 'Segoe UI', system-ui, -apple-system, Roboto, 'Noto Sans', Arial, sans-serif;
+    --font-head: 'Commissioner', 'Segoe UI', system-ui, -apple-system, Roboto, 'Noto Sans', Arial, sans-serif;
     --fs-body: 1.125rem;     /* 18px */
     --fs-small: 1rem;        /* 16px, labels only */
     --fs-h1: clamp(1.8rem, 4vw, 2.6rem);
@@ -818,13 +818,23 @@ html.reduce-motion *, html.reduce-motion *::before, html.reduce-motion *::after 
     const OPSYM = ['+', '−', '×', '÷', '=', '<', '>', '→', '?'];
 
     // L('Το', f, '=', g) -> segments.
+    // Greek article before a unit fraction: «τα 2/3» but «το 1/3», «των 2/3» but «του 1/3».
+    function fixArticles(segs) {
+        for (let i = 0; i + 1 < segs.length; i++) {
+            const s = segs[i], f = segs[i + 1];
+            if (s.t !== 'text' || f.t !== 'frac' || f.n !== 1 || f.d === 1) continue;
+            s.v = s.v.replace(/(^|\s)([Σσ]?[Ττ])α(\s*)$/, '$1$2ο$3').replace(/(^|\s)([Ττ])ων(\s*)$/, '$1$2ου$3');
+        }
+        return segs;
+    }
+
     function L() {
-        return Array.from(arguments).map(function (x) {
+        return fixArticles(Array.from(arguments).map(function (x) {
             if (typeof x === 'number') return S.num(x);
             if (typeof x === 'string') return OPSYM.indexOf(x) !== -1 ? S.op(x) : S.text(x);
             if (x && x.t) return x;
             return S.frac(x);
-        });
+        }));
     }
 
     // A quantity in a word problem: whole number, proper fraction or mixed number.
@@ -857,7 +867,7 @@ html.reduce-motion *, html.reduce-motion *::before, html.reduce-motion *::after 
             else if (v.t) out.push(v);
             else out.push(S.frac(v));
         });
-        return out;
+        return fixArticles(out);
     }
 
     function fracText(f) { return f.d === 1 ? String(f.n) : f.n + '/' + f.d; }
@@ -1490,7 +1500,10 @@ html.reduce-motion *, html.reduce-motion *::before, html.reduce-motion *::after 
             steps = [L('1/' + r.a.d + ' του ' + r.k + ' = ' + r.k + ' ÷ ' + r.a.d + ' = ' + (r.k / r.a.d) + '.'), L(r.a, 'του ' + r.k + ' = ' + r.a.n + ' × ' + (r.k / r.a.d) + ' = ' + value.n + '.')];
         } else if (t.kind === 'quot') {
             const b = t.units ? pick(rng, t.units) : (diff === 'easy' ? raw(1, pick(rng, cfg.quotUnitDens)) : properIrr(rng, ri(rng, 3, cfg.quotMaxDen)));
-            const count = ri(rng, cfg.quotCount[0], cfg.quotCount[1]);
+            const count = attempt(function () { // a total of 1 would read «1 κιλά»
+                const c = ri(rng, cfg.quotCount[0], cfg.quotCount[1]);
+                return equals(mul(b, fromInt(c)), fromInt(1)) ? null : c;
+            });
             const a = mul(b, fromInt(count));
             vars = { a: qty(a), b: b }; value = fromInt(count);
             steps = [[qty(a), S.op('÷'), S.frac(b), S.op('='), qty(a), S.op('×'), S.frac(raw(b.d, b.n)), S.op('='), S.num(count)]];
@@ -1500,7 +1513,7 @@ html.reduce-motion *, html.reduce-motion *::before, html.reduce-motion *::after 
             vars = { a: a, k: k }; value = div(a, fromInt(k));
             steps = [[S.frac(a), S.op('÷'), S.num(k), S.op('='), S.frac(a), S.op('×'), S.frac(raw(1, k)), S.op('=')].concat(valueSegs(value))];
         }
-        const idVals = Object.keys(vars).sort().map(k => { const v = vars[k]; return k + '=' + (typeof v === 'number' ? v : (v.t === 'mixed' ? v.w + ' ' + v.n + '/' + v.d : v.n + '/' + v.d)); }).join(',');
+        const idVals = Object.keys(vars).sort().map(k => { const v = vars[k]; return k + '=' + (typeof v === 'number' ? v : (v.t === 'mixed' ? v.w + ' ' + v.n + '/' + v.d : v.t === 'num' ? v.v : v.n + '/' + v.d)); }).join(',');
         return {
             id: 'problems:' + op + ':' + tIndex + ':' + idVals,
             type: 'problems', difficulty: diff, op: op,
@@ -1511,7 +1524,7 @@ html.reduce-motion *, html.reduce-motion *::before, html.reduce-motion *::after 
                 : t.kind === 'share' ? 'Μοιράζουμε σε ίσα μέρη: διαίρεσε το κλάσμα με τον αριθμό.'
                 : t.kind === 'ofInt' ? 'Βρες πρώτα πόσο είναι το 1/' + vars.a.d + ' και μετά πολλαπλασίασε.'
                 : t.kind === 'times' ? 'Ίδια ποσότητα πολλές φορές: πολλαπλασίασε.'
-                : t.kind === 'ofQty' ? 'Τα «' + fracText(vars.b) + ' του» σημαίνει πολλαπλασιασμό.'
+                : t.kind === 'ofQty' ? (vars.b.n === 1 ? 'Το' : 'Τα') + ' «' + fracText(vars.b) + ' του» σημαίνει πολλαπλασιασμό.'
                 : OP_HINTS[op],
             explain: { visuals: visuals, steps: steps }
         };
@@ -1945,7 +1958,7 @@ html.reduce-motion *, html.reduce-motion *::before, html.reduce-motion *::after 
             prompt: useCtx ? tpl(ctx.text, { B: r.B, p: r.p + '%' }) : L('Βρες το ' + r.p + '% του ' + r.B + '.'),
             input: { kind: 'typed', layout: 'integer' },
             answer: valueAnswer(fromInt(ans), { forms: ['integer'] }),
-            hint: 'Το ' + r.p + '% είναι τα ' + r.p + '/100. Βρες το 1% (÷ 100) ή το 10% (÷ 10) και μετά πολλαπλασίασε.',
+            hint: 'Το ' + r.p + '% είναι ' + (r.p === 1 ? 'το ' : 'τα ') + r.p + '/100. Βρες το 1% (÷ 100) ή το 10% (÷ 10) και μετά πολλαπλασίασε.',
             explain: { visuals: [], steps: [L(r.p + '% του ' + r.B + ' =', raw(r.p, 100), '× ' + r.B + ' = ' + (r.p * r.B) + ' ÷ 100 = ' + ans + '.')] }
         };
     };
@@ -1964,6 +1977,7 @@ html.reduce-motion *, html.reduce-motion *::before, html.reduce-motion *::after 
         const r = attempt(function () {
             const b = ri(rng, 2, cfg.maxDivisor);
             const a = cfg.improper ? ri(rng, 1, cfg.maxDividend) : ri(rng, 1, Math.min(b - 1, cfg.maxDividend));
+            if (type === 'context' && a < 2) return null; // «1 πίτσες»
             return a % b === 0 ? null : { a: a, b: b };
         });
         const a = r.a, b = r.b, value = simplify(a, b);
